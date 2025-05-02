@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head><title>All Predictions</title></head>
+<body>
+    <h2>Prediction Records</h2>
+    <table border="1">
+        <tr><th>ID</th><th>Filename</th><th>Result</th></tr>
+        {% for row in rows %}
+        <tr>
+            <td>{{ row[0] }}</td>
+            <td>{{ row[1] }}</td>
+            <td>{{ row[2] }}</td>
+        </tr>
+        {% endfor %}
+    </table><br>
+    <a href="/">Back to Home</a>
+</body>
+</html>
+

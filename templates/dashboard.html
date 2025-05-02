@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+  <title>Dashboard</title>
+  <style>
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 8px 12px; border: 1px solid #ccc; text-align: center; }
+    .fraud { color: red; font-weight: bold; }
+    .match { color: green; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Signature Comparison Dashboard</h1>
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>User ID</th>
+      <th>Timestamp</th>
+      <th>Score</th>
+      <th>Result</th>
+    </tr>
+    {% for row in rows %}
+    <tr>
+      <td>{{ row[0] }}</td>
+      <td>{{ row[1] }}</td>
+      <td>{{ row[2] }}</td>
+      <td>{{ "%.2f"|format(row[3]) }}</td>
+      <td class="{{ 'fraud' if row[4] else 'match' }}">
+        {{ 'Forgery ❌' if row[4] else 'Match ✅' }}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  <br>
+  <a href="/">Back to Upload</a>
+</body>
+</html>
