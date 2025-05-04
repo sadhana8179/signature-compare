@@ -72,7 +72,7 @@ def compare():
     file2.save(path2)
 
     score = compare_images(path1, path2)
-    is_fraud = score < 0.75  # You can adjust threshold
+    is_fraud = score < 0.75  # Adjust threshold as needed
 
     # Save images as binary blobs
     with open(path1, 'rb') as f1, open(path2, 'rb') as f2:
@@ -95,6 +95,8 @@ def dashboard():
     conn.close()
     return render_template("dashboard.html", rows=rows)
 
+# Always run init_db at app startup
+init_db()
+
 if __name__ == '__main__':
-    init_db()
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=10000, debug=True)
