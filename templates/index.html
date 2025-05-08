@@ -1,15 +1,25 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-  <head><title>Compare Signatures</title></head>
-  <body>
-    <h1>Upload Signatures</h1>
-    <form action="/compare" method="post" enctype="multipart/form-data">
-      <label>User ID:</label><br>
-      <input type="text" name="user_id" required><br><br>
-      <input type="file" name="original" required><br><br>
-      <input type="file" name="test" required><br><br>
-      <input type="submit" value="Compare">
+<head>
+    <title>Signature Comparison</title>
+</head>
+<body>
+    <h2>Fraud Signature Detection</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <label>Original Signature:</label>
+        <input type="file" name="original" required><br><br>
+        <label>Test Signature:</label>
+        <input type="file" name="test" required><br><br>
+        <button type="submit">Compare</button>
     </form>
-  </body>
+
+    {% if result %}
+        <h3>{{ result }}</h3>
+        <a href="/dashboard">View All Comparisons</a>
+    {% endif %}
+</body>
 </html>
+
+</html>
+
 

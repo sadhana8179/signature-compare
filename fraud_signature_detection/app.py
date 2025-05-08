@@ -50,12 +50,10 @@ def display_signature(signature_id):
 
 # ----- Run the steps -----
 print("✅ Running main.py")
-
 create_database()
 insert_signature("user123", "signature1.png.jpeg", is_fraud=True, score=0.95)
-
 print("📄 Fraud Signatures:")
 print(fetch_fraud_signatures())
-
 print("🖼️ Displaying signature image...")
 display_signature(1)
+

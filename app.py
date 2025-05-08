@@ -1,102 +1,40 @@
-from flask import Flask, request, render_template, redirect, url_for
-import sqlite3
+from flask import Flask, request, render_template
+from werkzeug.utils import secure_filename
 import os
-from PIL import Image
-import io
-import numpy as np
-from skimage.metrics import structural_similarity as ssim
-import cv2
-from datetime import datetime
+from models.compare import compare_signatures
+from database.database import init_db, save_result, get_all_results
 
 app = Flask(__name__)
-
-# Ensure upload folder exists
-UPLOAD_FOLDER = 'uploads'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Database setup
-def init_db():
-    conn = sqlite3.connect('fraud_signatures.db')
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS comparisons (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT,
-            original_image BLOB,
-            test_image BLOB,
-            score REAL,
-            is_fraud BOOLEAN,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    conn.commit()
-    conn.close()
+init_db()
 
-def insert_comparison(user_id, orig_blob, test_blob, score, is_fraud):
-    conn = sqlite3.connect('fraud_signatures.db')
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO comparisons (user_id, original_image, test_image, score, is_fraud)
-        VALUES (?, ?, ?, ?, ?)
-    """, (user_id, orig_blob, test_blob, score, is_fraud))
-    conn.commit()
-    conn.close()
-
-# Image similarity comparison
-def compare_images(image1_path, image2_path):
-    img1 = cv2.imread(image1_path, cv2.IMREAD_GRAYSCALE)
-    img2 = cv2.imread(image2_path, cv2.IMREAD_GRAYSCALE)
-    img1 = cv2.resize(img1, (300, 100))
-    img2 = cv2.resize(img2, (300, 100))
-    score, _ = ssim(img1, img2, full=True)
-    return score
-
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html')
+    result = None
+    if request.method == 'POST':
+        original = request.files['original']
+        test = request.files['test']
+        orig_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(original.filename))
+        test_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(test.filename))
+        original.save(orig_path)
+        test.save(test_path)
 
-@app.route('/compare', methods=['POST'])
-def compare():
-    file1 = request.files['original']
-    file2 = request.files['test']
-    user_id = request.form.get('user_id', 'anonymous')
-
-    if not file1 or not file2:
-        return "Please upload both files."
-
-    path1 = os.path.join(app.config['UPLOAD_FOLDER'], 'original.png')
-    path2 = os.path.join(app.config['UPLOAD_FOLDER'], 'test.png')
-
-    file1.save(path1)
-    file2.save(path2)
-
-    score = compare_images(path1, path2)
-    is_fraud = score < 0.75  # Adjust threshold as needed
-
-    # Save images as binary blobs
-    with open(path1, 'rb') as f1, open(path2, 'rb') as f2:
-        orig_blob = f1.read()
-        test_blob = f2.read()
-
-    insert_comparison(user_id, orig_blob, test_blob, score, is_fraud)
-
-    result = "Forgery Detected ❌" if is_fraud else "Match ✅"
-    return render_template("result.html", score=round(score, 2), result=result)
+        similarity = compare_signatures(orig_path, test_path)
+        save_result(original.filename, test.filename, similarity)
+        result = f"Similarity Score: {similarity}%"
+    return render_template('index.html', result=result)
 
 @app.route('/dashboard')
 def dashboard():
-    conn = sqlite3.connect('fraud_signatures.db')
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT id, user_id, timestamp, score, is_fraud FROM comparisons ORDER BY timestamp DESC
-    """)
-    rows = cursor.fetchall()
-    conn.close()
-    return render_template("dashboard.html", rows=rows)
-
-# Always run init_db at app startup
-init_db()
+    results = get_all_results()
+    return render_template('dashboard.html', results=results)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000, debug=True)
+    app.run(debug=True)
+
+
+
+
